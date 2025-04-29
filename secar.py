@@ -13,6 +13,7 @@ pi = 3.14  # Pi approximation
 draft = 7.8  # Ship draft (m)
 L = 122  # Ship length (m)
 rho = 1.025  # Water density (kg/m³), used in later calculations
+bml = 127.793
 
 # Calculate wave frequency squared
 wsq = g * 2 * pi / L / 1.2
