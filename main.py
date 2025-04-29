@@ -7,28 +7,36 @@ with open(f'in.txt', 'r') as f:
 n = len(cc)  # Number of rows
 m = len(cc[0])  # Number of columns
 
+with open('in2.txt', 'r') as f:
+    cc2 = [float(i) for i in f.read().strip().split('\n')]
+
 # Constants
 g = 9.8  # Gravitational acceleration (m/s²)
 pi = 3.14  # Pi approximation
-draft = 7.8  # Ship draft (m)
-L = 122  # Ship length (m)
 rho = 1.025  # Water density (kg/m³), used in later calculations
-bml = 127.793
+
+
+L = cc2[0]  # Ship length (m)
+draft = cc2[1]  # Ship draft (m)
+bml = cc2[2]
 
 # Calculate wave frequency squared
-wsq = g * 2 * pi / L / 1.2
+wsq = g * 2 * pi / L / cc2[3]
 
-# Read ratio data
-with open('data.txt', 'r') as f:
-    ratios = [float(i) for i in f.read().split('\t\t')]
 
 # List available data files
 files = os.listdir('data')
 
 # Initialize ratio lookup dictionary
-ratio_in = {8: 7, 10: 7}
-for idx, i in enumerate(ratios):
-    ratio_in[i * 2.5] = idx 
+ratio_in = {8 : 7, 10 : 7}
+
+for i in range(1, 12):
+    ratio_in[i] = i - 1
+
+ratio_in[8] = 7
+ratio_in[10] = 7
+ratio_in[11] = 8
+
 
 # Initialize arrays for calculations
 sa = []      # Sectional areas
