@@ -1,168 +1,182 @@
 import os
 
 
-def calculate(lamdaByL, length, draft, breadth, bml):
+def calculateResults(lamdaByL, length, draft, breadth, bml):
     # Read input data from file
-    with open(f'in.txt', 'r') as f:
+    try:
+
+       with open(f'./uploads/in.txt', 'r') as f:
         cc = [[float(j) for j in i.split('\t')] for i in f.read().strip().split('\n')]
 
-    n = len(cc)  # Number of rows
-    m = len(cc[0])  # Number of columns
+        n = len(cc)  # Number of rows
+        m = len(cc[0])  # Number of columns
 
-    with open('in2.txt', 'r') as f:
-        cc2 = [float(i) for i in f.read().strip().split('\n')]
+        with open('in2.txt', 'r') as f:
+            cc2 = [float(i) for i in f.read().strip().split('\n')]
 
-    # Constants
-    g = 9.8  # Gravitational acceleration (m/s²)
-    pi = 3.14  # Pi approximation
-    rho = 1.025  # Water density (kg/m³), used in later calculations
-
-
-    L = length  # Ship length (m)
-    draft = draft  # Ship draft (m)
-
-    # Calculate wave frequency squared
-    wsq = g * 2 * pi / L / lamdaByL
+        # Constants
+        g = 9.8  # Gravitational acceleration (m/s²)
+        pi = 3.14  # Pi approximation
+        rho = 1.025  # Water density (kg/m³), used in later calculations
 
 
-    # List available data files
-    files = os.listdir('data')
+        L = length  # Ship length (m)
+        draft = draft  # Ship draft (m)
 
-    # Initialize ratio lookup dictionary
-    ratio_in = {8 : 7, 10 : 7}
-
-    for i in range(1, 12):
-        ratio_in[i] = i - 1
-
-    ratio_in[8] = 7
-    ratio_in[10] = 7
-    ratio_in[11] = 8
+        # Calculate wave frequency squared
+        wsq = g * 2 * pi / L / lamdaByL
 
 
-    # Initialize arrays for calculations
-    sa = []      # Sectional areas
-    beta = []    # Shape coefficient
-    b_by_t = []  # Beam to draft ratio
-    xaxis = []   # Frequency parameter
-    wpa = []     # Waterplane areas
-    a_cf = []    # Added mass coefficients
-    d_cf = []    # Damping coefficients
+        # List available data files
+        files = os.listdir('data')
 
-    # Process each column (ship section)
-    for i in range(1, m):
-        pr = 0    # Previous value
-        pr2 = 0   # Previous x-coordinate
-        ar = 0    # Area
-        b = 0     # Maximum breadth
-        
-        # Calculate sectional area and find maximum breadth
-        for j in range(1, n):
-            ar += (cc[j][i] + pr) * (cc[j][0] - pr2)  # Area calculation using trapezoidal rule
-            pr = cc[j][i]   # Update previous y-value
-            pr2 = cc[j][0]  # Update previous x-value
-            b = max(b, cc[j][i])  # Update maximum breadth
-        
-        # Store calculated values
-        sa.append(ar)  # Sectional area
-        beta.append(round(sa[-1] / (b * 2 * draft), 1))  # Shape coefficient
-        
-        # Ensure minimum beta value
-        if beta[-1] < 0.5:
-            beta[-1] = 0.5
-        
-        b_by_t.append(b * 2 / draft)  # Beam to draft ratio
-        xaxis.append(wsq * b / g)  # Frequency parameter
-        
-        # Read added mass coefficients from data files
-        with open(f'data/{int(beta[-1] * 10)}.txt', 'r') as f:
-            con = [[0 if j == '' else float(j) for j in i.split('\t')] for i in f.read().split('\n')]
+        # Initialize ratio lookup dictionary
+        ratio_in = {8 : 7, 10 : 7}
+
+        for i in range(1, 12):
+            ratio_in[i] = i - 1
+
+        ratio_in[8] = 7
+        ratio_in[10] = 7
+        ratio_in[11] = 8
+
+
+        # Initialize arrays for calculations
+        sa = []      # Sectional areas
+        beta = []    # Shape coefficient
+        b_by_t = []  # Beam to draft ratio
+        xaxis = []   # Frequency parameter
+        wpa = []     # Waterplane areas
+        a_cf = []    # Added mass coefficients
+        d_cf = []    # Damping coefficients
+
+        # Process each column (ship section)
+        for i in range(1, m):
+            pr = 0    # Previous value
+            pr2 = 0   # Previous x-coordinate
+            ar = 0    # Area
+            b = 0     # Maximum breadth
             
-            # Find appropriate ratio index
-            tem = ratio_in[max(1, round(b_by_t[-1] * 2.5, 0))]
+            # Calculate sectional area and find maximum breadth
+            for j in range(1, n):
+                ar += (cc[j][i] + pr) * (cc[j][0] - pr2)  # Area calculation using trapezoidal rule
+                pr = cc[j][i]   # Update previous y-value
+                pr2 = cc[j][0]  # Update previous x-value
+                b = max(b, cc[j][i])  # Update maximum breadth
             
-            # Find closest matching value
-            dd = 1000  # Initialize with a large value
-            y = -1     # Default value
+            # Store calculated values
+            sa.append(ar)  # Sectional area
+            beta.append(round(sa[-1] / (b * 2 * draft), 1))  # Shape coefficient
             
-            for row in con:
-                if abs(xaxis[-1] - row[tem * 2]) < dd:
-                    dd = abs(xaxis[-1] - row[tem * 2])
-                    y = row[tem * 2 + 1]
+            # Ensure minimum beta value
+            if beta[-1] < 0.5:
+                beta[-1] = 0.5
             
-            a_cf.append(y)  # Store added mass coefficient
-        
-        # Read damping coefficients from data files
-        with open(f'DAMPING/{int(beta[-1] * 10)}.txt', 'r') as f:
-            con = [[0 if j == '' else float(j) for j in i.split('\t')] for i in f.read().split('\n')]
+            b_by_t.append(b * 2 / draft)  # Beam to draft ratio
+            xaxis.append(wsq * b / g)  # Frequency parameter
             
-            # Find appropriate ratio index
-            tem = ratio_in[max(1, round(b_by_t[-1] * 2.5, 0))]
+            # Read added mass coefficients from data files
+            with open(f'data/{int(beta[-1] * 10)}.txt', 'r') as f:
+                con = [[0 if j == '' else float(j) for j in i.split('\t')] for i in f.read().split('\n')]
+                
+                # Find appropriate ratio index\
+                # print(b_by_t)
+                # print(max(1, round(b_by_t[-1] * 2.5, 0)))
+                tem = ratio_in[max(1, round(b_by_t[-1] * 2.5, 0))]
+                
+                # Find closest matching value
+                dd = 1000  # Initialize with a large value
+                y = -1     # Default value
+                
+                for row in con:
+                    if abs(xaxis[-1] - row[tem * 2]) < dd:
+                        dd = abs(xaxis[-1] - row[tem * 2])
+                        y = row[tem * 2 + 1]
+                
+                a_cf.append(y)  # Store added mass coefficient
             
-            # Find closest matching value
-            dd = 1000  # Initialize with a large value
-            y = -1     # Default value
+            # Read damping coefficients from data files
+            with open(f'DAMPING/{int(beta[-1] * 10)}.txt', 'r') as f:
+                con = [[0 if j == '' else float(j) for j in i.split('\t')] for i in f.read().split('\n')]
+                
+                # Find appropriate ratio index
+                tem = ratio_in[max(1, round(b_by_t[-1] * 2.5, 0))]
+                
+                # Find closest matching value
+                dd = 1000  # Initialize with a large value
+                y = -1     # Default value
+                
+                for row in con:
+                    if abs(xaxis[-1] - row[tem * 2]) < dd:
+                        dd = abs(xaxis[-1] - row[tem * 2])
+                        y = row[tem * 2 + 1]
+                
+                d_cf.append(y)  # Store damping coefficient
+
+
+        aa = list(a_cf[::-1])
+        aa.append(0)
+        aa = list(aa[::-1])
+
+        # Initialize variables for heave calculations
+        p1 = 0       # Unused variable
+        a3 = 0       # Heave added mass
+        a55 = 0      # Pitch added mass moment
+        i_mass = 0   # Mass moment of inertia
+
+        # Calculate heave and pitch parameters
+        for idx, i in enumerate(cc[0][1:]):
+            a3 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho
+            a55 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho * (L / 2 - i) ** 2
+            i_mass += (i - cc[0][idx]) * sa[idx] * rho * (L / 2 - i) ** 2
+
+        aa = list(d_cf[::-1])
+        aa.append(0)
+        aa = list(aa[::-1])
+
+        # Initialize variables for damping calculations
+        p1 = 0  # Unused variable
+        b3 = 0  # Heave damping
+        b55 = 0 # Pitch damping moment
+
+        # Calculate damping coefficients
+        for idx, i in enumerate(cc[0][1:]):
+            b3 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho
+            b55 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho * (L / 2 - i) ** 2
+
+        # Calculate waterplane areas
+        for i in range(1, n):
+            pr = 0    # Previous value
+            ar = 0    # Area
+            b = 0     # Maximum breadth (unused)
+            pr2 = 0   # Previous x-coordinate
             
-            for row in con:
-                if abs(xaxis[-1] - row[tem * 2]) < dd:
-                    dd = abs(xaxis[-1] - row[tem * 2])
-                    y = row[tem * 2 + 1]
+            for j in range(1, m):
+                ar += (cc[i][j] + pr) * (cc[0][j] - pr2)  # Area calculation using trapezoidal rule
+                pr = cc[i][j]   # Update previous y-value
+                pr2 = cc[0][j]  # Update previous x-value
             
-            d_cf.append(y)  # Store damping coefficient
+            wpa.append(ar)  # Store waterplane area
 
+        # Write results to output file
+        output_data = {
+                "sectional_areas": [round(i, 2) for i in sa],
+                "beta": [round(i, 2) for i in beta],
+                "beam_to_draft_ratio": [round(i, 2) for i in b_by_t],
+                "x_axis": [round(i, 2) for i in xaxis],
+                "added_mass_coefficients": [round(i, 2) for i in a_cf],
+                "damping_coefficients": [round(i, 2) for i in d_cf],
+                "A33": round(a3, 3),
+                "A55": round(a55, 3),
+                "B33": round(b3, 4),
+                "B55": round(b55, 3),
+                "i_mass": round(i_mass, 3),
+                "wpa_c33": [{"WPA": round(w, 2), "C33": round(w * rho * g, 2)} for w in wpa]
+            }
 
-    aa = list(a_cf[::-1])
-    aa.append(0)
-    aa = list(aa[::-1])
-
-    # Initialize variables for heave calculations
-    p1 = 0       # Unused variable
-    a3 = 0       # Heave added mass
-    a55 = 0      # Pitch added mass moment
-    i_mass = 0   # Mass moment of inertia
-
-    # Calculate heave and pitch parameters
-    for idx, i in enumerate(cc[0][1:]):
-        a3 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho
-        a55 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho * (L / 2 - i) ** 2
-        i_mass += (i - cc[0][idx]) * sa[idx] * rho * (L / 2 - i) ** 2
-
-    aa = list(d_cf[::-1])
-    aa.append(0)
-    aa = list(aa[::-1])
-
-    # Initialize variables for damping calculations
-    p1 = 0  # Unused variable
-    b3 = 0  # Heave damping
-    b55 = 0 # Pitch damping moment
-
-    # Calculate damping coefficients
-    for idx, i in enumerate(cc[0][1:]):
-        b3 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho
-        b55 += (aa[idx] + aa[idx + 1]) / 2 * (i - cc[0][idx]) * sa[idx] * rho * (L / 2 - i) ** 2
-
-    # Calculate waterplane areas
-    for i in range(1, n):
-        pr = 0    # Previous value
-        ar = 0    # Area
-        b = 0     # Maximum breadth (unused)
-        pr2 = 0   # Previous x-coordinate
-        
-        for j in range(1, m):
-            ar += (cc[i][j] + pr) * (cc[0][j] - pr2)  # Area calculation using trapezoidal rule
-            pr = cc[i][j]   # Update previous y-value
-            pr2 = cc[0][j]  # Update previous x-value
-        
-        wpa.append(ar)  # Store waterplane area
-
-    # Write results to output file
-    with open('output.txt', 'w') as f:
-        print('SEC AREA\t' + '\t'.join([str(round(i, 2)) for i in sa]), file=f)
-        print('Beta\t' + '\t'.join([str(round(i, 2)) for i in beta]), file=f)
-        print('B/T\t' + '\t'.join([str(round(i, 2)) for i in b_by_t]), file=f)
-        print('X_Axis\t' + '\t'.join([str(round(i, 2)) for i in xaxis]), file=f)
-        print('Added mass coeff\t' + '\t'.join([str(round(i, 2)) for i in a_cf]), file=f)
-        print('Damping Coeff\t' + '\t'.join([str(round(i, 2)) for i in d_cf]), file=f)
-
-        print(f'\nA33\t{a3:.3g}\nA55\t{a55:.3g}\nB33\t{b3:.4g}\nB55\t{b55:.3g}\ni_mass\t{i_mass:.3g}\n', file=f)
-
-        print('\nWPA\tC33\n' + '\n'.join([f"{str(round(i, 2))}\t{str(round(i*rho*g, 2))}" for i in wpa]), file=f)
+        return output_data
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        import traceback
+        traceback.print_exc()  # 🔥 this will show full error with exact line number
+        return {}

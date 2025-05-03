@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify, send_file
 import os
 import shutil
-
+from flask_cors import CORS
 app = Flask(__name__)
-
+CORS(app)
 # Assume secar.py becomes a function
-from main import calculate  # We'll define this function inside secar.py
+from main import calculateResults  # We'll define this function inside secar.py
 
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -24,12 +24,31 @@ def calculate():
     file_path = os.path.join(UPLOAD_FOLDER, 'in.txt')
     file.save(file_path)
 
-    # Copy to expected location for the script
+    # Copy to expected location for the calculation script
     shutil.copy(file_path, 'in.txt')
 
     try:
-        results = calculate()  # You need to adapt secar.py to provide this function
+        # Now collect all required variables
+        lamdaByL = request.form.get('lamdaByL')
+        length = request.form.get('length')
+        bml = request.form.get('bml')
+        breadth = request.form.get('breadth')
+        draft = request.form.get('draft')
+
+        # Check if all variables are provided
+        if None in [lamdaByL, length, bml, breadth, draft]:
+            return jsonify({'error': 'Missing one or more required parameters: lamdaByL, length, bml, breadth, draft.'}), 400
+
+        # Convert variables to float
+        lamdaByL = float(lamdaByL)
+        length = float(length)
+        bml = float(bml)
+        breadth = float(breadth)
+        draft = float(draft)
+        # Pass everything to the calculations function
+        results = calculateResults(lamdaByL, length, bml, breadth, draft)
         return jsonify(results)
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
